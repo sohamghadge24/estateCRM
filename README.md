@@ -84,3 +84,4 @@ npm run dev
 
 ## 📜 License
 MIT License. Developed for enterprise real estate agency mandate and inventory operations.
+
