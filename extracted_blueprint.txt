@@ -1,0 +1,1799 @@
+
+◈  ESTATEOS
+TECHNICAL PROJECT BLUEPRINT
+Architecture, API Specification, Delivery Plan and Client Readiness
+Multi-Tenant Real Estate CRM & Property Operations SaaS
+PROJECT
+PLATFORMS
+RECOMMENDED STACK
+STATUS
+VERSION
+DATE
+EstateOS
+Agency Web Workspace, Public Property Portal, SaaS Platform Admin
+FastAPI + React/TypeScript + MYSQL + Redis/Celery
+Pre-development / Review
+1.0
+4 November 2026
+
+Prepared as a detailed engineering blueprint for product scope finalization and implementation planning.
+
+Document Control
+Item
+Details
+Document title
+EstateOS - Technical Project Blueprint
+Purpose
+Architecture and implementation plan covering scope, workflows, APIs, data, security, deployment, testing and delivery.
+Source basis
+Previously prepared EstateOS architecture blueprint and API requirements, organized in the supplied GovTrack360 blueprint format.
+Status / version
+Pre-development / Architecture Review | Version 1.0
+Prepared date
+4 November 2026
+Business model
+Multi-tenant SaaS for real estate agencies, brokers and property businesses.
+Target market
+India and international markets.
+Change control
+Changes after approval should be assessed for schedule, cost, security and data-model impact.
+
+How to read this document
+Sections 1-4 define the product, scope and workflows. Sections 5-15 describe the technical solution, application surfaces, backend, API catalogue, data, security and operations. Sections 16-24 cover delivery, governance, assumptions, client decisions, risks, acceptance and next steps. Appendices provide API examples, preliminary data entities and a readiness checklist.
+Contents
+No.
+Section
+No.
+Section
+1
+Executive Summary
+2
+Project Scope and Objectives
+3
+Operating Model and End-to-End Workflows
+4
+Functional Modules
+5
+Recommended Technology Stack
+6
+Technical Architecture
+7
+Agency Workspace Architecture
+8
+Public Property Portal Architecture
+9
+SaaS Platform Administration Architecture
+10
+Backend and Domain Architecture
+11
+API Requirements and Endpoint Catalogue
+12
+Database and Data Architecture
+13
+Security, Privacy, Audit and Governance
+14
+Background Jobs, Events and Integrations
+15
+Performance, Scaling and Capacity Planning
+16
+Development Plan and Timeline
+17
+Team Requirements and Responsibilities
+18
+Testing and Quality Assurance
+19
+Deployment, DevOps, Backup and Disaster Recovery
+20
+Commercial Estimate and Assumptions
+21
+Client Inputs and Decisions Required Before Development
+22
+Risks, Dependencies and Mitigations
+23
+Acceptance Criteria and Handover
+24
+Recommended Pilot and Next Steps
+
+The endpoint catalogue is a proposed API contract. A route is considered implemented only after it exists in the running service, is tested and is published in OpenAPI.
+
+1. Executive Summary
+EstateOS is a commercial-grade, multi-tenant real estate CRM and property operations platform for independent agencies, brokerages, property consultants and multi-branch businesses. It combines CRM, property inventory, listing publication, enquiry handling, appointments, deals, commissions, communications and agency reporting.
+The product has three distinct surfaces: Agency Workspace for owners, managers and agents; Public Property Portal for customers discovering listings and submitting enquiries; and SaaS Platform Administration for the EstateOS operator to manage agency tenants, plans, subscriptions, entitlements and platform health.
+The recommended implementation is a modular monolith using FastAPI, React/TypeScript, PostgreSQL with PostGIS, Redis and Celery, S3-compatible object storage and Docker Compose. This keeps the first release deployable on an affordable VPS while preserving module boundaries for future scale.
+Objective
+Expected outcome
+Agency operations
+One workspace for leads, contacts, inventory, listings, follow-ups, visits, deals and employee performance.
+Customer acquisition
+Tenant-branded property pages and enquiry capture connected to the correct agency CRM.
+SaaS operations
+Centralized tenant provisioning, plan entitlements, subscription billing, usage controls and platform monitoring.
+Security
+Tenant isolation, scoped permissions, auditability, private media and controlled data export.
+Commercial readiness
+Configurable branding, plans, quotas, integration adapters and deployment procedures.
+
+1.1 Planning assumptions
+Shared platform with shared PostgreSQL schema and tenant_id isolation for agency-owned records.
+A global person account may have memberships in multiple agencies; roles are assigned per membership.
+The first release is a modular monolith, not microservices.
+Public listing access is separated from private CRM, customer, deal and financial data.
+Payment, email, SMS, WhatsApp, calendar and map services are integrations selected during discovery.
+SaaS subscription billing must remain separate from agency property transactions, customer payments and agent commissions.
+2. Project Scope and Objectives
+2.1 In-scope platforms
+Platform
+Scope
+Agency Web Workspace
+Responsive workspace for agency admins, managers, agents, property managers, marketing and finance roles.
+Public Property Portal
+Public listing search, detail pages, agency branding, contact/enquiry forms and SEO-friendly pages.
+SaaS Platform Admin
+Tenant registry, plans, subscriptions, global settings, support controls, usage and platform monitoring.
+Backend API
+Versioned REST API, authentication, authorization, business services, integrations, workers and OpenAPI.
+Data and storage
+MYSQL, Redis, encrypted object storage, migrations, backups and audit records.
+
+2.2 In-scope capabilities
+Capability
+Scope
+Organization and access
+Agencies, branches, teams, users, invitations, memberships, roles, permissions and data scopes.
+CRM
+Lead capture, deduplication, assignment, pipeline, follow-ups, notes, activities and import/export.
+Property inventory
+Residential, commercial, land and other property types; attributes, media, documents and status.
+Listings
+Sale/rent lifecycle, publication, expiry, featured placement, public search and listing analytics.
+Engagement
+Contacts, enquiries, appointments, site visits, tasks, reminders and communication history.
+Transactions
+Deals, offers, booking/payment milestones, commissions, closing status and documents.
+Business management
+Campaigns, agency finance, commission tracking, dashboards, analytics and audit.
+SaaS billing
+Plans, trials, subscriptions, invoices, payments, quotas and feature entitlements.
+
+2.3 Scope boundaries
+EstateOS is a real estate CRM and agency operations platform, not a complete accounting ERP, legal conveyancing system, property valuation authority or payment processor. Integrations can connect specialist systems, but their full scope should be separately estimated.
+Automated legal title verification is not assumed.
+External listing portal syndication depends on partner APIs and commercial access.
+WhatsApp requires an approved provider and applicable template/consent rules.
+Payment, GST and country-specific tax workflows require provider and accountant confirmation.
+3. Operating Model and End-to-End Workflows
+3.1 Tenant onboarding
+Platform administrator provisions an agency tenant and selects a plan or trial.
+Agency owner activates a global account and accepts agency membership.
+Agency Admin configures profile, branding, branches, teams and workflows.
+Agency Admin invites employees and assigns roles, branches and teams.
+Employees accept invitations and enter only the workspace permitted by their membership.
+3.2 Lead-to-deal lifecycle
+Stage
+Action
+System behavior
+Capture
+Website, listing, referral, campaign, phone or manual
+Create lead, capture source, validate and detect likely duplicates.
+Assign
+Automatic routing or manager allocation
+Apply authorized assignment rules, record history and notify agent.
+Qualify
+Confirm budget, location, type and timeline
+Update qualification, priority and follow-up date.
+Engage
+Calls, email, WhatsApp and meetings
+Record activities in customer timeline.
+Visit
+Schedule property viewing
+Create appointment and capture visit feedback.
+Negotiate
+Offers and counteroffers
+Create deal and append offer history.
+Close
+Booking, agreement, payment milestones and commission
+Track deal value, amounts collected and commission separately.
+Won/Lost
+Complete or close opportunity
+Preserve history, record reason and update analytics.
+
+3.3 Property-to-listing lifecycle
+Create property record with address, geolocation, type, attributes and ownership/representation details.
+Upload media and documents through controlled upload.
+Create one or more listings linked to the property.
+Submit for approval if the agency uses review workflow.
+Publish to agency portal and update search index.
+Capture public enquiries and route to agency CRM.
+Expire, pause, renew or archive listings without deleting property history.
+3.4 User, role and scope model
+Concept
+Meaning
+Example
+User
+Global login identity
+One person uses one account across two agencies.
+Tenant
+Agency/business customer
+ABC Realty.
+Membership
+User-to-agency relationship
+Active agent membership at ABC Realty.
+Role
+Capabilities assigned to membership
+Sales Agent, Branch Manager, Accountant.
+Branch/team
+Organizational scope
+Pune branch / Residential team.
+Record scope
+Records the role may access
+Own, team, branch or tenant.
+
+A role is not the reporting hierarchy. Authorization combines active membership, role permissions, branch/team assignment, record ownership and tenant boundary.
+4. Functional Modules
+Module
+Primary responsibilities
+Platform Administration
+Tenant lifecycle, plans, subscriptions, global settings, usage, support access and platform audit.
+Agency Management
+Agency profile, branding, settings, branches, business hours, custom fields and data export.
+Identity & Access
+Login, refresh rotation, invitations, memberships, role assignments, permission scopes and sessions.
+Branch & Team Management
+Branch records, team structures, manager relationships and employee allocation.
+CRM & Leads
+Sources, capture, deduplication, assignment, pipeline, scoring, follow-ups, activities and bulk operations.
+Contacts & Clients
+Buyer, seller, landlord, tenant profiles, preferences and linked records.
+Property Management
+Inventory, attributes, ownership/representation, geolocation, photos, videos and documents.
+Listings & Marketplace
+Sale/rent listings, approval, publishing, expiry, public search and listing analytics.
+Enquiries
+Public/internal capture, assignment, status, conversion and response tracking.
+Appointments & Visits
+Calendar, client meetings, site visits, reminders and visit feedback.
+Deals & Transactions
+Offers, negotiation, booking, payment milestones, closure and cancellation.
+Tasks & Activities
+Calls, meetings, notes, reminders, due dates and recurring work.
+Communications
+Email, SMS, WhatsApp adapters, templates, delivery logs and timeline.
+Documents & Media
+Private uploads, access controls, signed URLs, metadata and quotas.
+Marketing & Campaigns
+Attribution, channel tracking, spend, lead conversion and ROI.
+Finance & Commissions
+Agency transactions, expenses, commission splits and payouts.
+Billing & Subscriptions
+SaaS plans, trial, renewals, invoices, payments, quotas and entitlements.
+Dashboard & Analytics
+Role-specific KPIs, funnels, property performance, revenue and agent/branch reports.
+Audit & Governance
+Sensitive activity history, permission changes, export logs and retention.
+
+
+5. Recommended Technology Stack
+Layer
+Technology
+Responsibility / rationale
+Frontend
+React + TypeScript + Vite
+Private agency workspace and platform admin SPA.
+UI
+Tailwind CSS + shadcn/ui
+Accessible components, responsive layouts, dark/light themes.
+Public portal
+Next.js/React SSR or SSG
+SEO-friendly public listing pages; confirm rendering strategy.
+Backend
+Python + FastAPI
+Versioned REST API, dependency injection and OpenAPI.
+Validation
+Pydantic v2
+Request/response and configuration validation.
+ORM / migrations
+SQLAlchemy 2.x + Alembic
+Database mapping, transactions and schema evolution.
+Database
+PostgreSQL + PostGIS
+Transactional source of truth and geospatial search.
+Cache / broker
+Redis
+Cache, rate-limit state and task broker.
+Background jobs
+Celery + Celery Beat
+Notifications, imports, exports, image processing and reminders.
+Object storage
+S3-compatible / MinIO
+Private media, contracts, documents and exports.
+Authentication
+JWT + rotating refresh tokens
+Short-lived access and revocable sessions; Argon2id passwords.
+Authorization
+RBAC + scopes + PostgreSQL RLS
+Tenant and record-level access enforcement.
+Reverse proxy
+Traefik or Nginx
+HTTPS termination and routing.
+Deployment
+Docker Compose initially
+Affordable self-hosted deployment.
+Testing
+Pytest, HTTPX, Playwright, Locust
+Backend, API, browser and load testing.
+Observability
+Structured logs; Prometheus/Grafana optional
+Health, latency, errors and worker monitoring.
+
+5.1 Technology decisions
+PostgreSQL is authoritative; Redis is disposable infrastructure.
+Keep providers behind adapters so messaging, maps, storage and payments can change.
+Use a modular monolith first; extract services only when evidence justifies it.
+Use SSR/SSG for search-engine-visible listing pages; private CRM may remain a Vite SPA.
+6. Technical Architecture
+Requests enter through a reverse proxy that routes the public portal, private workspace and API. FastAPI owns authentication, tenant context, business rules, authorization and transactional writes. MYSQL stores operational records. Redis supports caching and task brokering. Celery workers execute asynchronous work. Object storage stores media and documents outside the relational database.
+Customers / Agents / Agency Admins / Platform Admins\n                    | HTTPS\n          Reverse Proxy (Traefik / Nginx)\n        /              |                 \\\n Public Property   Agency Workspace   SaaS Platform Admin\n Portal             React + TS        React + TS\n        \\              |                /\n              Versioned REST API /api/v1\n                       |\n       FastAPI Modular Monolith + Domain Services\n       Auth | Tenant | RBAC | CRM | Property | Deals | Billing\n             /              |                 \\\n MYSQL     Redis + Celery      S3-compatible Storage\n Source of truth       Cache / Workers     Images / Documents / Exports
+6.1 Architecture principles
+Tenant-aware by design: tenant_id and PostgreSQL RLS protect agency-owned records.
+API-first: web clients and integrations use versioned contracts, never direct database access.
+Each domain owns models, schemas, repositories, services, routers, events and permissions.
+Persist critical business state and outbox event in one transaction.
+Run exports, imports, media processing and notifications asynchronously.
+Store object keys privately; issue short-lived signed access after authorization.
+One deployable backend initially, with clear module boundaries.
+6.2 Core boundaries
+Boundary
+Responsibility
+API layer
+Authentication, validation, authorization, idempotency, response contracts and correlation IDs.
+Application services
+Lead assignment, listing publication, deal closure, subscription changes and exports.
+Domain services
+Lifecycle rules, commission calculations, entitlement checks and access-scope decisions.
+Repository/data layer
+Tenant-scoped queries, transactions, constraints, PostGIS and read models.
+Worker layer
+Notifications, reminders, imports/exports, media processing and reports.
+Integration adapters
+Payment, email, SMS, WhatsApp, calendar, maps and portal syndication.
+
+7. Agency Workspace Architecture
+Navigation area
+Scope / functions
+Dashboard
+Role-specific KPIs, pipeline, reminders, recent activity and alerts.
+Leads & CRM
+Lead inbox, pipeline/kanban, assignment, qualification, activities and import/export.
+Contacts
+Buyer/seller/landlord/tenant profiles, preferences and timeline.
+Properties
+Inventory, attributes, media, documents, location and availability.
+Listings
+Sale/rent listings, review, publication, expiry and analytics.
+Enquiries
+Portal enquiry inbox, response status, assignment and lead conversion.
+Appointments
+Calendar, site visits, participant assignment and feedback.
+Deals
+Offers, negotiation, booking, payment milestones, commissions and closing.
+Tasks & Activities
+My/team tasks, follow-ups, overdue work, notes and recurring reminders.
+Marketing
+Campaigns, lead sources, spend and conversion reporting.
+Finance
+Agency transactions, expenses, commissions and outstanding payments.
+Reports
+Lead funnel, property performance, agent activity, deals and finance.
+Organization
+Branches, teams, employees, roles, permissions and settings.
+Billing
+SaaS subscription, invoices, usage and entitlements.
+Audit
+Authorized history of changes and exports.
+
+7.1 Role profiles
+Role
+Typical capabilities
+Default scope
+Agency Admin
+Agency configuration, users, branches, roles, billing and reports.
+Tenant
+Branch Manager
+Branch employees, leads, inventory and branch performance.
+Branch
+Team Leader
+Team assignment, pipeline and follow-ups.
+Team
+Sales Agent
+Assigned leads, contacts, visits and deals.
+Own / assigned
+Property Manager
+Property inventory, availability and listing content.
+Assigned / branch
+Marketing Executive
+Campaigns, promotion and campaign analytics.
+Assigned / team
+Accountant
+Transactions, commissions, invoices and payouts.
+Configured finance scope
+Read-Only User
+View permitted records and reports.
+Configured scope
+Platform Super Admin
+Platform tenants, plans and operations; support access separately audited.
+Platform control plane
+
+7.2 Permission model
+Use granular codes such as leads.view, leads.create, leads.assign, properties.publish, users.invite, billing.manage and reports.view. Scope values include own, team, branch and tenant. Backend authorization is authoritative; hiding a button in the frontend is not a security control.
+8. Public Property Portal Architecture
+Area
+Functions
+Agency microsite
+Tenant-branded logo, colors, contact details, custom domain and agency profile.
+Property search
+City/locality, property type, sale/rent, budget, area, bedrooms and amenities.
+Map discovery
+Map/list toggle, radius search and location-based results using PostGIS.
+Listing detail
+Photos, description, amenities, location context, price, availability and enquiry CTA.
+Enquiry capture
+Contact details, message, preferred channel, consent and listing reference.
+SEO
+Canonical URLs, metadata, sitemap, structured data and server-rendered/SSG pages.
+Lead routing
+Resolve listing tenant, create enquiry, apply abuse controls and route to CRM.
+Privacy
+Rate limiting, CAPTCHA where appropriate, consent notice and minimal personal data.
+
+GET  /api/v1/public/listings\nGET  /api/v1/public/listings/{slug}\nPOST /api/v1/public/listings/{slug}/enquiries\nGET  /api/v1/public/agencies/{slug}
+Public routes expose only approved published listing data. They must never expose private CRM records, internal notes, owner contact details, deals or employee data.
+9. SaaS Platform Administration Architecture
+Area
+Functions
+Tenant registry
+Provision, activate, suspend and inspect agency tenants.
+Plans & entitlements
+Plans, feature flags, quotas, trial rules and grandfathered entitlements.
+Subscription operations
+Renewals, upgrades, downgrades, cancellation, invoices and payment events.
+Usage metering
+Users, branches, active listings, media storage and API usage.
+Platform health
+API, queue, worker, database, storage and backup monitoring.
+Support operations
+Support cases and controlled, time-limited, reason-recorded customer access.
+Global configuration
+Email identity, allowed domains, integration defaults and feature rollout.
+Platform audit
+Admin actions, subscription changes, support access and tenant lifecycle.
+
+Platform administrators do not automatically receive unrestricted access to customer leads, contacts, documents or deal data. Support access must be explicit, time-limited and audited.
+
+10. Backend and Domain Architecture
+estateos/\n  backend/app/\n    main.py\n    core/          # config, security, permissions, tenant context\n    api/v1/        # version router and shared dependencies\n    modules/       # auth, tenants, memberships, users, roles, branches\n                   # leads, contacts, properties, listings, enquiries\n                   # appointments, deals, tasks, communications, documents\n                   # campaigns, finance, billing, analytics, audit\n    database/      # engine, session, base, RLS helpers\n    workers/       # Celery tasks and scheduled jobs\n  alembic/ tests/\n  frontend/ infrastructure/ scripts/ docs/
+10.1 Domain rules outside route handlers
+Tenant selection and active membership validation.
+Role permission plus own/team/branch/tenant scope evaluation.
+Lead assignment, qualification, duplicate merge and pipeline transitions.
+Property/listing lifecycle and publication approval.
+Public enquiry-to-tenant mapping and lead conversion.
+Deal offers, booking, payments and commission calculations.
+Plan entitlements and quota enforcement.
+Document access, retention and export authorization.
+10.2 Transaction and event pattern
+Persist business state and outbox event in the same PostgreSQL transaction. Workers dispatch notifications, webhooks and follow-up jobs. Consumers must be idempotent, retries bounded and failed events visible for review. Do not rely on in-memory events for durable workflows.
+11. API Requirements and Endpoint Catalogue
+All application routes are versioned under /api/v1, documented in OpenAPI, protected by explicit permissions and covered by automated tests. The following are proposed routes, not a claim that they are already deployed.
+11.1 API base URLs and documentation
+Environment / interface
+URL
+Purpose
+Local API base
+http://localhost:8000/api/v1
+Local FastAPI API base for development.
+Production API base
+https://api.yourdomain.com/api/v1
+Production API over HTTPS behind reverse proxy.
+Local Swagger UI
+http://localhost:8000/docs
+Interactive OpenAPI explorer and request testing.
+Local ReDoc
+http://localhost:8000/redoc
+Readable API reference.
+Local OpenAPI JSON
+http://localhost:8000/openapi.json
+Machine-readable API contract.
+Production Swagger (if enabled)
+https://api.yourdomain.com/docs
+Restrict or disable for sensitive deployments.
+Production ReDoc (if enabled)
+https://api.yourdomain.com/redoc
+Publish according to security policy.
+
+The two primary API base URLs are local development and production. Swagger UI and ReDoc are documentation interfaces, not API base URLs. Replace yourdomain.com with the registered domain and configure DNS, TLS and reverse-proxy routing.
+11.2 Cross-cutting API requirements
+Requirement
+Standard
+Transport
+HTTPS only in production; TLS 1.2+; no secrets in query strings.
+Authentication
+Short-lived access token and rotating refresh tokens; secure HttpOnly cookies and CSRF protection for cookie sessions.
+Authorization
+Role permissions plus own/team/branch/tenant scope on every protected request.
+Tenant context
+Derive from authenticated membership; never trust client tenant_id as authorization.
+Versioning
+/api/v1; breaking changes require a new version and deprecation plan.
+Idempotency
+Use Idempotency-Key for payments and retry-sensitive writes.
+Time
+Store UTC timestamps; preserve tenant timezone for display/business rules.
+Pagination
+Document page/cursor pagination, max page size and allowlisted filters/sorts.
+Errors
+Consistent code, message, field errors and request_id; no stack traces.
+Uploads
+Controlled/pre-signed uploads; validate MIME, size, checksum and ownership.
+Rate limits
+Per-user, IP, tenant and integration-client limits.
+Audit
+Log privileged writes, exports, role changes, billing and sensitive document access.
+OpenAPI
+Review schemas and examples; publish dev/UAT documentation.
+
+11.3 Authentication and tenant APIs
+Method
+Endpoint
+Purpose / function
+Primary access
+POST
+/api/v1/auth/register
+Create global user where self-registration is enabled.
+Public/policy
+POST
+/api/v1/auth/login
+Authenticate and establish session.
+Public
+POST
+/api/v1/auth/refresh
+Rotate refresh token and issue access token.
+Session
+POST
+/api/v1/auth/logout
+Revoke current session/token family.
+Authenticated
+POST
+/api/v1/auth/forgot-password
+Start rate-limited password reset.
+Public
+POST
+/api/v1/auth/reset-password
+Complete reset with one-time token.
+Public
+POST
+/api/v1/auth/verify-email
+Verify email address.
+Public
+GET
+/api/v1/auth/me
+Return user, active membership, roles and scopes.
+Authenticated
+POST
+/api/v1/auth/switch-tenant
+Switch agency after membership validation.
+Authenticated
+GET
+/api/v1/auth/sessions
+List active sessions.
+Self/Admin
+DELETE
+/api/v1/auth/sessions/{id}
+Revoke a session.
+Self/Admin
+
+11.4 Platform tenant and plan APIs
+Method
+Endpoint
+Purpose / function
+Primary access
+GET
+/api/v1/platform/dashboard
+Platform KPIs: tenants, users, subscriptions and usage.
+Platform Admin
+GET
+/api/v1/platform/tenants
+Search/list agencies.
+Platform Admin
+POST
+/api/v1/platform/tenants
+Provision agency tenant.
+Platform Admin
+GET
+/api/v1/platform/tenants/{id}
+Read tenant status and profile.
+Platform Admin
+PATCH
+/api/v1/platform/tenants/{id}
+Update tenant configuration.
+Platform Admin
+POST
+/api/v1/platform/tenants/{id}/suspend
+Suspend tenant with reason.
+Platform Admin
+POST
+/api/v1/platform/tenants/{id}/activate
+Reactivate tenant.
+Platform Admin
+GET
+/api/v1/platform/plans
+List plans.
+Platform Admin
+POST
+/api/v1/platform/plans
+Create plan and entitlements.
+Platform Admin
+PATCH
+/api/v1/platform/plans/{id}
+Update plan configuration.
+Platform Admin
+GET
+/api/v1/platform/usage
+Review aggregated usage.
+Platform Admin
+GET
+/api/v1/platform/audit-logs
+Search platform audit events.
+Platform Admin
+
+11.5 Agency, branch and team APIs
+Method
+Endpoint
+Purpose / function
+Primary access
+GET
+/api/v1/agency/profile
+Read agency profile.
+Agency Admin
+PATCH
+/api/v1/agency/profile
+Update agency details.
+Agency Admin
+GET
+/api/v1/agency/settings
+Read branding/workflow settings.
+Authorized
+PATCH
+/api/v1/agency/settings
+Update agency settings.
+Agency Admin
+GET
+/api/v1/branches
+List branches in scope.
+Authorized
+POST
+/api/v1/branches
+Create branch subject to quota.
+Agency Admin
+GET
+/api/v1/branches/{id}
+Read branch details.
+Branch scope
+PATCH
+/api/v1/branches/{id}
+Update branch.
+Agency Admin
+DELETE
+/api/v1/branches/{id}
+Deactivate/archive branch.
+Agency Admin
+GET
+/api/v1/teams
+List teams.
+Authorized
+POST
+/api/v1/teams
+Create team.
+Admin/Manager
+POST
+/api/v1/teams/{id}/members
+Assign team member.
+Manager
+DELETE
+/api/v1/teams/{id}/members/{membership_id}
+Remove team member.
+Manager
+
+11.6 Users, roles and permissions APIs
+Method
+Endpoint
+Purpose / function
+Primary access
+GET
+/api/v1/users
+List agency memberships/employees.
+users.view
+POST
+/api/v1/users/invitations
+Invite employee with role/branch/team.
+users.invite
+GET
+/api/v1/users/invitations
+List invitation states.
+users.view
+POST
+/api/v1/users/invitations/{id}/resend
+Resend valid invitation.
+users.invite
+POST
+/api/v1/users/invitations/{id}/revoke
+Revoke invitation.
+users.invite
+GET
+/api/v1/users/{membership_id}
+Read membership details.
+users.view
+PATCH
+/api/v1/users/{membership_id}
+Update permitted membership attributes.
+users.update
+POST
+/api/v1/users/{membership_id}/suspend
+Suspend membership and revoke access.
+users.suspend
+GET
+/api/v1/roles
+List system/custom roles.
+roles.view
+POST
+/api/v1/roles
+Create custom agency role.
+roles.manage
+PATCH
+/api/v1/roles/{id}
+Update custom role.
+roles.manage
+DELETE
+/api/v1/roles/{id}
+Delete unused custom role.
+roles.manage
+GET
+/api/v1/permissions
+List permission codes and scopes.
+roles.view
+PUT
+/api/v1/roles/{id}/permissions
+Replace role permission set.
+roles.manage
+PUT
+/api/v1/users/{membership_id}/roles
+Assign roles to membership.
+roles.assign
+
+11.7 CRM leads and contacts APIs
+Method
+Endpoint
+Purpose / function
+Primary access
+GET
+/api/v1/leads
+List leads with filters and scope.
+leads.view
+POST
+/api/v1/leads
+Create lead; tenant/creator derived server-side.
+leads.create
+GET
+/api/v1/leads/{id}
+Read lead details and activity.
+leads.view
+PATCH
+/api/v1/leads/{id}
+Update permitted lead fields.
+leads.update
+DELETE
+/api/v1/leads/{id}
+Archive lead subject to retention.
+leads.delete
+POST
+/api/v1/leads/{id}/assign
+Assign/reassign eligible agent.
+leads.assign
+POST
+/api/v1/leads/{id}/status
+Apply validated pipeline transition.
+leads.update
+GET
+/api/v1/leads/{id}/activities
+Read interaction/status history.
+leads.view
+POST
+/api/v1/leads/{id}/activities
+Record activity.
+leads.update
+POST
+/api/v1/leads/import
+Start CSV import job.
+leads.import
+GET
+/api/v1/leads/export
+Start/download authorized export.
+leads.export
+GET
+/api/v1/leads/statistics
+Scoped funnel/source statistics.
+reports.view
+GET
+/api/v1/contacts
+List customer contacts.
+contacts.view
+POST
+/api/v1/contacts
+Create contact.
+contacts.create
+GET
+/api/v1/contacts/{id}
+Read contact profile.
+contacts.view
+PATCH
+/api/v1/contacts/{id}
+Update contact/preferences.
+contacts.update
+GET
+/api/v1/contacts/{id}/leads
+List linked leads.
+contacts.view
+GET
+/api/v1/contacts/{id}/deals
+List linked deals.
+contacts.view
+
+11.8 Properties, listings and public portal APIs
+Method
+Endpoint
+Purpose / function
+Primary access
+GET
+/api/v1/properties
+List inventory with filters.
+properties.view
+POST
+/api/v1/properties
+Create property.
+properties.create
+GET
+/api/v1/properties/{id}
+Read property details.
+properties.view
+PATCH
+/api/v1/properties/{id}
+Update property details.
+properties.update
+DELETE
+/api/v1/properties/{id}
+Archive after linked-record checks.
+properties.archive
+POST
+/api/v1/properties/{id}/media/upload-url
+Request short-lived upload URL.
+properties.media
+POST
+/api/v1/properties/{id}/media
+Register uploaded media metadata.
+properties.media
+GET
+/api/v1/properties/{id}/listings
+List linked listings.
+properties.view
+GET
+/api/v1/properties/search
+Search property inventory.
+properties.view
+GET
+/api/v1/properties/nearby
+PostGIS radius search.
+properties.view
+GET
+/api/v1/listings
+List agency listings.
+listings.view
+POST
+/api/v1/listings
+Create sale/rent listing.
+listings.create
+GET
+/api/v1/listings/{id}
+Read listing.
+listings.view
+PATCH
+/api/v1/listings/{id}
+Update listing content/terms.
+listings.update
+POST
+/api/v1/listings/{id}/publish
+Publish after validation/approval.
+properties.publish
+POST
+/api/v1/listings/{id}/unpublish
+Unpublish listing.
+properties.publish
+POST
+/api/v1/listings/{id}/feature
+Feature if plan permits.
+listings.feature
+GET
+/api/v1/listings/{id}/analytics
+Views, enquiries and conversion.
+reports.view
+GET
+/api/v1/public/listings
+Public search published listings only.
+Public
+GET
+/api/v1/public/listings/{slug}
+Public listing detail.
+Public
+POST
+/api/v1/public/listings/{slug}/enquiries
+Capture enquiry and resolve tenant.
+Public/rate limited
+GET
+/api/v1/public/agencies/{slug}
+Public agency profile/branding.
+Public
+
+11.9 Enquiries, appointments and tasks APIs
+Method
+Endpoint
+Purpose / function
+Primary access
+GET
+/api/v1/enquiries
+List agency enquiries.
+enquiries.view
+POST
+/api/v1/enquiries
+Create internal enquiry.
+enquiries.create
+GET
+/api/v1/enquiries/{id}
+Read enquiry.
+enquiries.view
+PATCH
+/api/v1/enquiries/{id}
+Update status and notes.
+enquiries.update
+POST
+/api/v1/enquiries/{id}/assign
+Assign enquiry.
+enquiries.assign
+POST
+/api/v1/enquiries/{id}/convert-to-lead
+Convert/link CRM lead.
+leads.create
+GET
+/api/v1/appointments
+List appointments in scope.
+appointments.view
+POST
+/api/v1/appointments
+Schedule meeting/site visit.
+appointments.create
+GET
+/api/v1/appointments/{id}
+Read appointment.
+appointments.view
+PATCH
+/api/v1/appointments/{id}
+Update appointment.
+appointments.update
+POST
+/api/v1/appointments/{id}/reschedule
+Reschedule visit.
+appointments.update
+POST
+/api/v1/appointments/{id}/complete
+Complete visit and capture feedback.
+appointments.update
+POST
+/api/v1/appointments/{id}/cancel
+Cancel with reason.
+appointments.update
+GET
+/api/v1/tasks
+List tasks in scope.
+tasks.view
+POST
+/api/v1/tasks
+Create task/follow-up.
+tasks.create
+GET
+/api/v1/tasks/my-tasks
+List current user's tasks.
+tasks.view
+GET
+/api/v1/tasks/overdue
+List overdue tasks.
+tasks.view
+PATCH
+/api/v1/tasks/{id}
+Update task.
+tasks.update
+POST
+/api/v1/tasks/{id}/complete
+Complete task.
+tasks.update
+
+11.10 Deals, payments and commissions APIs
+Method
+Endpoint
+Purpose / function
+Primary access
+GET
+/api/v1/deals
+List deals in scope.
+deals.view
+POST
+/api/v1/deals
+Create deal linked to property/contacts.
+deals.create
+GET
+/api/v1/deals/{id}
+Read deal details.
+deals.view
+PATCH
+/api/v1/deals/{id}
+Update permitted fields/status.
+deals.update
+POST
+/api/v1/deals/{id}/offers
+Record offer/counteroffer.
+deals.offer
+GET
+/api/v1/deals/{id}/offers
+Read offer history.
+deals.view
+POST
+/api/v1/deals/{id}/payments
+Record payment milestone.
+finance.record
+GET
+/api/v1/deals/{id}/payments
+Read payment records.
+finance.view
+POST
+/api/v1/deals/{id}/close
+Close after required checks.
+deals.close
+POST
+/api/v1/deals/{id}/cancel
+Cancel with reason.
+deals.cancel
+GET
+/api/v1/deals/{id}/commissions
+Read commission allocation.
+commissions.view
+GET
+/api/v1/commissions
+List commissions.
+commissions.view
+POST
+/api/v1/commissions/{id}/mark-paid
+Record commission payout.
+commissions.pay
+
+11.11 Communications, documents and campaigns APIs
+Method
+Endpoint
+Purpose / function
+Primary access
+GET
+/api/v1/communications
+Search communication history.
+communications.view
+POST
+/api/v1/communications/email
+Queue email via provider adapter.
+communications.send
+POST
+/api/v1/communications/sms
+Queue SMS via provider adapter.
+communications.send
+POST
+/api/v1/communications/whatsapp
+Queue approved WhatsApp message.
+communications.send
+GET
+/api/v1/communications/templates
+List message templates.
+communications.view
+POST
+/api/v1/communications/templates
+Create agency template.
+communications.manage
+GET
+/api/v1/documents
+List accessible documents.
+documents.view
+POST
+/api/v1/documents/upload-url
+Create controlled upload session.
+documents.upload
+POST
+/api/v1/documents
+Register uploaded metadata.
+documents.upload
+GET
+/api/v1/documents/{id}
+Read metadata/access policy.
+documents.view
+GET
+/api/v1/documents/{id}/download-url
+Issue authorized signed URL.
+documents.download
+DELETE
+/api/v1/documents/{id}
+Archive/delete subject to retention.
+documents.delete
+GET
+/api/v1/campaigns
+List campaigns.
+campaigns.view
+POST
+/api/v1/campaigns
+Create campaign.
+campaigns.create
+PATCH
+/api/v1/campaigns/{id}
+Update campaign/attribution.
+campaigns.update
+GET
+/api/v1/campaigns/{id}/analytics
+Campaign spend and conversion.
+reports.view
+
+11.12 Finance, SaaS billing and analytics APIs
+Method
+Endpoint
+Purpose / function
+Primary access
+GET
+/api/v1/finance/transactions
+List agency transactions.
+finance.view
+POST
+/api/v1/finance/transactions
+Record authorized transaction.
+finance.record
+GET
+/api/v1/finance/expenses
+List expenses.
+finance.view
+POST
+/api/v1/finance/expenses
+Record expense.
+finance.record
+GET
+/api/v1/finance/reports
+Agency financial summaries.
+finance.reports
+GET
+/api/v1/billing/plans
+List SaaS plans.
+Public/tenant
+GET
+/api/v1/billing/subscription
+Read agency SaaS subscription.
+billing.view
+POST
+/api/v1/billing/subscription
+Start subscription/trial.
+billing.manage
+PATCH
+/api/v1/billing/subscription
+Change plan/interval.
+billing.manage
+POST
+/api/v1/billing/subscription/cancel
+Request cancellation.
+billing.manage
+GET
+/api/v1/billing/invoices
+List SaaS invoices.
+billing.view
+GET
+/api/v1/billing/invoices/{id}
+Read/download SaaS invoice.
+billing.view
+POST
+/api/v1/billing/webhooks/{provider}
+Receive signed, deduplicated webhook.
+Provider
+GET
+/api/v1/dashboard/agency
+Agency KPIs.
+dashboard.view
+GET
+/api/v1/dashboard/branch
+Branch KPIs.
+dashboard.view
+GET
+/api/v1/dashboard/team
+Team KPIs.
+dashboard.view
+GET
+/api/v1/dashboard/agent
+Personal agent KPIs.
+dashboard.view
+GET
+/api/v1/analytics/leads
+Lead funnel/source analytics.
+reports.view
+GET
+/api/v1/analytics/properties
+Inventory/listing analytics.
+reports.view
+GET
+/api/v1/analytics/deals
+Deal pipeline/closure analytics.
+reports.view
+GET
+/api/v1/analytics/revenue
+Revenue/commission analytics.
+reports.view
+GET
+/api/v1/audit-logs
+Tenant-scoped audit history.
+audit.view
+
+11.13 API request example
+POST /api/v1/leads\nAuthorization: Bearer <access-token>\nContent-Type: application/json\n\n{\n  "name": "Rahul Sharma", "email": "rahul@example.com",\n  "phone": "+919876543210", "source": "website",\n  "property_type": "apartment", "budget_min": 5000000,\n  "budget_max": 8000000, "city": "Mumbai"\n}
+{ "data": { "id": "resource-uuid", "status": "new" },\n  "meta": { "request_id": "req_..." } }
+The server determines tenant_id, creator membership and default ownership. The client cannot select another tenant by submitting tenant_id.
+
+12. Database and Data Architecture
+12.1 Main data domains
+Domain
+Core tables / entities
+Platform
+tenants, plans, plan_entitlements, subscriptions, subscription_events, usage_records
+Identity
+users, memberships, invitations, refresh_tokens, sessions
+Authorization
+roles, permissions, membership_roles, role_permissions
+Organization
+branches, teams, team_members, membership_branches
+CRM
+leads, lead_sources, lead_assignments, lead_activities, contacts
+Property
+properties, property_media, property_documents, property_attributes
+Listings
+listings, listing_media, listing_status_history, listing_analytics
+Engagement
+enquiries, appointments, appointment_participants, tasks, reminders
+Transactions
+deals, offers, deal_payments, commissions, commission_payouts
+Communications
+message_templates, messages, communication_logs, provider_events
+Governance
+audit_logs, document_access_logs, export_jobs, outbox_events
+
+12.2 Multi-tenant isolation
+Use shared database/shared schema with tenant_id on tenant-owned tables. Use composite foreign keys and tenant-aware indexes. Apply PostgreSQL RLS to every tenant-owned and association table. The application DB role must be non-superuser and lack BYPASSRLS.
+ALTER TABLE leads ENABLE ROW LEVEL SECURITY;\nALTER TABLE leads FORCE ROW LEVEL SECURITY;\nCREATE POLICY tenant_leads_policy ON leads\nUSING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)\nWITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);\n-- Set tenant context transaction-locally after membership validation.
+12.3 Core relationships
+users 1---* memberships *---1 tenants\nmemberships *---* roles (membership_roles)\nroles *---* permissions (role_permissions)\ntenants 1---* branches 1---* teams\ntenants 1---* leads *---1 contacts\ntenants 1---* properties 1---* listings\nlistings 1---* enquiries *---1 contacts\ndeals *---1 property; deals *---* contacts; deals 1---* offers/payments/commissions
+12.4 Data design rules
+Use UUIDs, tenant_id, timestamps and created_by where appropriate.
+Use archival/soft deletion for important business records; preserve financial/audit history.
+Use decimal types for money and ISO currency codes, never floating point.
+Store timestamps in UTC and tenant timezone for display/business cut-offs.
+Use JSONB for flexible agency attributes, not core relational fields.
+Use PostGIS GiST indexes for spatial search and combine with tenant filters.
+Use tenant-aware unique constraints and indexes.
+13. Security, Privacy, Audit and Governance
+Control
+Required design
+Authentication
+Argon2id, short-lived access tokens, rotating hashed refresh tokens, reuse detection and login throttling.
+Authorization
+RBAC plus record scopes; deny by default.
+Tenant isolation
+PostgreSQL RLS, tenant-aware foreign keys and transaction-local context.
+Privileged actions
+MFA recommended for platform/agency admins; audit sensitive operations.
+Documents
+Private buckets, opaque object keys and short-lived signed URLs.
+Secrets/network
+Secret manager or protected environment; HTTPS; private DB/Redis/storage; minimal ports.
+Privacy
+Purpose limitation, consent/notice where required, retention, export and deletion workflows.
+Audit
+Actor, tenant, action, entity, timestamp, request ID and redacted before/after values.
+Support access
+Explicit, scoped, time-limited and audited.
+Financial safety
+Idempotent payments, signed webhooks, reconciliation and immutable transaction history.
+
+13.1 Important audit events
+Login failures and privileged session actions.
+Lead creation, assignment, status change and export.
+Property changes, listing publication and media access.
+Deal offers, payments, commission and closure changes.
+Role changes, user suspension, subscription changes and support access.
+13.2 International readiness
+Support tenant timezone, locale, currency, address conventions, country calling codes and configurable tax/invoice requirements. India readiness may include INR, GST invoice configuration, UPI/payment adapters and Indian phone formats. Technical readiness is not a legal compliance certification.
+14. Background Jobs, Events and Integrations
+Workload
+Execution approach
+Email/SMS/WhatsApp
+Queue provider delivery; store status/provider reference; retry transient failures.
+CSV import/export
+Validate asynchronously, stage records, return row-level errors and authorized download.
+Media processing
+Generate thumbnails, inspect file type, optionally scan malware and store variants.
+Reminders
+Schedule follow-ups, appointments, listing expiry, subscription renewal and overdue tasks.
+Reports
+Generate large PDF/XLSX/CSV asynchronously with owner/scope validation.
+Payment events
+Verify webhook signatures, deduplicate events and reconcile payment state.
+Search indexing
+Update public listing search after committed listing events.
+Outbox
+Persist critical event in same transaction; dispatch reliably.
+
+Integration
+Purpose / decision
+Payment gateway
+Subscription checkout, recurring payment, refunds and webhook lifecycle; provider selection required.
+Email
+Invitations, password reset and transactional messages; sender domain verification.
+SMS / WhatsApp
+OTP/reminders and customer communication; approved provider, templates and consent.
+Calendar
+Google/Microsoft sync using user-authorized OAuth and limited scopes.
+Maps / geocoding
+Map display, address lookup and geocoding; licensing/cost confirmation.
+Property portals
+Listing syndication only where partner APIs and commercial terms permit.
+Accounting / GST
+Invoice/ledger export; define system of record and reconciliation owner.
+
+15. Performance, Scaling and Capacity Planning
+Stage
+Deployment shape
+When to use
+Stage 1 - Pilot
+Single VPS: proxy, frontend, API, MYSQL, Redis, worker and storage.
+Development and controlled pilot.
+Stage 2 - Growth
+Increase resources; separate worker capacity; external object storage; monitoring/CDN.
+Higher media, imports, reports or concurrency.
+Stage 3 - Scale-out
+Multiple stateless APIs behind load balancer; managed/replicated DB; worker pools.
+Sustained traffic or availability requirement.
+Stage 4 - Selective extraction
+Extract only independently operated/high-load domains.
+Evidence supports separate scaling.
+
+Profile
+CPU
+RAM
+Disk
+Use
+Development/pilot
+2 vCPU
+4 GB
+40 GB SSD
+Small pilot; monitor workload.
+Small production
+4 vCPU
+8 GB
+100 GB+ SSD
+Early production; offsite backup recommended.
+Growing production
+8+ vCPU
+16+ GB
+Capacity-based
+Requires load testing and database monitoring.
+
+These are planning estimates, not capacity guarantees. A single VPS is a single point of failure. Media can dominate storage; use quotas, compression, thumbnails, lifecycle policies and offsite storage.
+15.1 Performance practices
+Tenant-aware indexes and composite indexes based on real query patterns.
+Cursor pagination for high-volume activity feeds.
+Connection pooling and short transaction boundaries.
+Tenant-scoped cache with explicit invalidation.
+PostGIS GiST indexes and pre-aggregated dashboard read models where needed.
+Load-test listing search, imports/exports and concurrent media uploads.
+16. Development Plan and Timeline
+Phase
+Estimate
+Deliverables
+0. Discovery
+1 week
+Requirements, workflows, role matrix, provider decisions, wireframes and acceptance.
+1. Foundation
+1 week
+Repository, Docker, CI, FastAPI, React, MYSQL and migrations.
+2. Identity/security
+2 weeks
+Tenants, memberships, invitations, roles, branches, RLS and isolation tests.
+3. CRM
+2 weeks
+Contacts, leads, pipeline, assignment, activities, tasks and imports.
+4. Property/listings
+3 weeks
+Inventory, media, listing lifecycle, public search and enquiries.
+5. Appointments/deals
+2 weeks
+Visits, offers, deal milestones and commissions.
+6. Dashboards/communications
+2 weeks
+Role dashboards, analytics, messaging adapter and notifications.
+7. Billing
+2 weeks
+Plans, entitlements, subscription integration, invoices and usage.
+8. Hardening/release
+2 weeks
+Security, performance, UAT, backup, monitoring and handover.
+
+Indicative focused implementation estimate: approximately 15 weeks for a controlled first release. External provider onboarding, portal syndication, mobile app development and jurisdiction-specific accounting/legal integrations may extend the schedule.
+16.1 First vertical slice
+Platform Admin creates agency tenant.
+Agency Admin signs in and creates branch.
+Agency Admin invites Sales Agent and assigns role/team.
+Agent creates lead and contact.
+Agent schedules follow-up and creates property/listing.
+Public customer submits enquiry.
+Enquiry appears in agency CRM and is assigned.
+Agency Admin reviews dashboard and audit trail.
+17. Team Requirements and Responsibilities
+Role
+Responsibility
+Product Owner / BA
+Requirements, workflows, acceptance criteria and priorities.
+Solution Architect / Tech Lead
+Architecture, security model, standards, reviews and technical risks.
+Backend Engineer
+FastAPI domains, database, migrations, API contracts, integrations and workers.
+Frontend Engineer
+Workspace, public portal, platform admin, design system and API integration.
+UI/UX Designer
+Research, information architecture, prototypes and usability.
+QA Engineer
+API/UI regression, tenant isolation, integration and UAT.
+DevOps Engineer
+Docker, CI/CD, TLS, monitoring, backup/restore and production runbooks.
+Security Reviewer
+Threat model, access controls, retention, VAPT coordination and remediation.
+
+A small team may combine responsibilities, but production security, backup/restore and acceptance testing must have named owners.
+18. Testing and Quality Assurance
+Test layer
+Coverage
+Unit
+Lead lifecycle, permissions, scopes, entitlements, commission math and state transitions.
+API integration
+Authentication, refresh rotation, CRUD, errors, pagination, filters and audit.
+Database/RLS
+Tenant A cannot read/write tenant B, including association tables and direct SQL as app role.
+Authorization
+Agent own-record, manager branch/team, admin operations, suspended membership and role changes.
+Frontend/E2E
+Login, navigation, forms, search, tenant onboarding, lead-to-deal and public enquiry.
+Integrations
+Payment webhook signature/idempotency, provider failures, storage and calendar.
+Performance
+Concurrent API traffic, listing search, dashboards, imports and media workloads.
+Security
+Dependency/secret scan, OWASP checks, rate limits, access-control tests and VAPT.
+
+18.1 Mandatory release gates
+No cross-tenant access in API or direct database tests.
+No unauthorized record access across own/team/branch boundaries.
+Refresh rotation and reuse detection verified.
+Private document URLs require authorization.
+Payment webhooks are signature-verified and idempotent.
+Backup restore has been tested.
+Critical UAT workflows are signed off.
+19. Deployment, DevOps, Backup and Disaster Recovery
+19.1 Docker Compose services
+reverse-proxy (Traefik/Nginx)\nfrontend (workspace + public portal + platform admin)\nbackend (FastAPI)\npostgres-postgis | redis | celery-worker | celery-beat\nobject-storage (MinIO or external S3) | backup job\noptional monitoring: Prometheus + Grafana
+19.2 Deployment workflow
+git clone <repository>\ncd estateos\ncp .env.example .env\n# Configure domain, secrets, database and provider credentials\ndocker compose up -d --build\ndocker compose exec backend alembic upgrade head\n# Verify health checks, migrations, backup and routing
+19.3 Backup and recovery
+Nightly PostgreSQL custom-format backups; consider PITR for production.
+Object storage versioning/replication and lifecycle policies.
+Encrypt backups and store offsite with separate credentials.
+Define RPO/RTO and recovery ownership.
+Run periodic restore drills and validate application consistency.
+Do not copy live database/object volumes as unrelated files; use consistent backup procedures.
+20. Commercial Estimate and Assumptions
+A reliable commercial estimate requires confirmed user/agency counts, hosting region, storage assumptions, provider selection, integration scope, support hours and service-level targets.
+Cost category
+Cost drivers
+Development
+Module count, surfaces, custom workflows, QA depth and UX scope.
+Infrastructure
+Compute, database, object storage, backups, bandwidth and monitoring.
+Third-party services
+Email, SMS, WhatsApp, maps, payment gateway, calendar and portal APIs.
+Operations
+Support, incident response, maintenance, monitoring and backup testing.
+Compliance/legal review
+Privacy notices, retention, tax invoicing and jurisdiction-specific requirements.
+
+No fixed subscription price or development quotation is asserted. Pricing should follow discovery, cost validation and market research.
+21. Client Inputs and Decisions Required Before Development
+Decision / input
+What must be confirmed
+Priority
+Tenant model
+Single agency tenant; multi-brand groups; parent/child structure if needed.
+Mandatory
+Scale
+Agency/user counts, branches, listings, leads/month and concurrency.
+Mandatory
+Roles
+Default/custom roles, multiple roles and scope matrix.
+Mandatory
+Lead ownership
+Assignment, reassignment, duplicate merge and employee departure rules.
+Mandatory
+Property model
+Types, required attributes, verification and listing lifecycle.
+Mandatory
+Public portal
+Shared portal vs tenant microsites/custom domains; SEO and branding.
+Mandatory
+Integrations
+Payment, email, SMS, WhatsApp, calendar, maps and portal APIs.
+Before integration
+Billing
+Plans, quotas, trial, renewal, grace, cancellation and taxes.
+Mandatory
+Hosting
+VPS/cloud/on-prem, region, data residency and network controls.
+Mandatory
+Privacy
+Retention, export/deletion and consent by market.
+Mandatory
+Availability
+SLA, RPO, RTO and maintenance windows.
+Before production
+Pilot
+Agencies, users, data migration, success metrics and sign-off.
+Before pilot
+
+21.1 Minimum artefacts requested
+Agency hierarchy and role examples.
+Lead stages, assignment and follow-up rules.
+Property types, required attributes and sample listings.
+Branding, public website and custom-domain requirements.
+Sample invoices, commission rules and subscription assumptions.
+Provider API docs and sandbox credentials.
+Hosting, privacy, security, retention and support policies.
+Named product owner, technical owner and UAT coordinator.
+22. Risks, Dependencies and Mitigations
+Risk
+Impact
+Mitigation
+Unclear permission boundaries
+High: leakage or rework.
+Approve role/scope matrix; test RLS from first sprint.
+Scope expansion
+High: timeline/cost growth.
+Release scope, change control and explicit exclusions.
+External portal APIs unavailable
+Syndication delayed.
+Keep optional; use own public portal and approved import fallback.
+Messaging onboarding delayed
+Automations delayed.
+Build adapters and use sandbox/mock provider during development.
+Payment provider constraints
+Billing blocked.
+Select early; validate recurring billing and webhook support.
+Poor property data quality
+Duplicate records and weak search.
+Define import templates, normalization and validation.
+Media/storage growth
+Cost and backup pressure.
+Quotas, compression, thumbnails and object storage lifecycle.
+Single VPS failure
+Platform outage.
+Offsite backups, restore drills and later HA architecture.
+Weak tenant testing
+Critical cross-customer exposure.
+RLS, composite keys and API/direct-DB isolation tests.
+Unclear legal/tax rules
+Jurisdiction compliance gap.
+Obtain local review; configure rather than hard-code.
+
+23. Acceptance Criteria and Handover
+23.1 Functional acceptance
+Agency can be provisioned and isolated from other agencies.
+Admin configures branches, invites users and assigns roles.
+Agent creates, qualifies and follows up leads.
+Agency creates properties/listings and publishes approved listings.
+Public enquiry creates tenant-scoped enquiry and can convert to CRM lead.
+Appointments, tasks, deals, offers and commissions follow approved transitions.
+Dashboards respect role and tenant scopes.
+Subscription lifecycle and entitlements work for selected provider or approved manual mode.
+23.2 Technical handover
+Deliverable
+Expected handover
+Source code
+Backend, frontend, infrastructure and scripts in approved repository.
+API package
+OpenAPI schema, endpoint examples, error codes, webhooks and API collection.
+Database
+Schema/migrations, seed guidance, data dictionary and backup/restore.
+Deployment
+Containers, CI/CD, environment inventory, runbook and rollback.
+Security
+Threat model, access matrix, scan/VAPT results and remediation.
+Testing
+Test plan, regression, load-test summary and UAT sign-off.
+Operations
+Monitoring, alert guide, backup/DR runbook and incident contacts.
+Documentation
+Admin, agent, support, integration and deployment guides.
+
+24. Recommended Pilot and Next Steps
+Run a controlled pilot before onboarding multiple agencies. Validate real workflows, lead assignment, listing quality, enquiry routing, staff adoption, permission boundaries, media usage, support load and subscription operations.
+Pilot area
+Suggested scope
+Validation
+Agency pilot
+One agency, one or two branches, small agent group and representative properties.
+Tenant onboarding, roles, CRM, listing workflow and adoption.
+Public portal
+Selected approved listings and agency-branded pages.
+Search, SEO, mobile usability and enquiry delivery.
+Commercial pilot
+Test plan/trial and quotas with sandbox/controlled payments.
+Entitlement, invoice, renewal/cancellation and webhook.
+Security pilot
+Cross-tenant, branch/team, private media and support boundaries.
+No unauthorized access; audit and incident visibility.
+
+24.1 Immediate next steps
+Confirm product name, target customer profile and first-release scope.
+Approve tenant, membership, role, branch/team and permission model.
+Confirm public portal strategy and domain/branding requirements.
+Approve API base URL conventions and initial OpenAPI contract.
+Finalize ERD and RLS migration plan.
+Select payment, email, messaging, calendar and map providers.
+Create wireframes and sprint backlog.
+Build tenant-security foundation before dashboards and advanced automation.
+Go/no-go gate: do not onboard broadly until tenant isolation, lead/listing workflows, private media access, subscription entitlements, backups/restore and monitoring pass acceptance.
+
+Appendix A - API Conventions and Sample Payloads
+A.1 Query and pagination example
+GET /api/v1/leads?status=qualified&branch_id=<uuid>&limit=25&cursor=<opaque-cursor>&sort=-created_at
+Use allowlisted filters and sort fields. Reject unknown sort expressions. Return a stable cursor and do not expose internal SQL/ORM field names.
+A.2 Create-lead payload
+{\n  "name": "Rahul Sharma", "email": "rahul@example.com",\n  "phone": "+919876543210", "source": "website",\n  "property_type": "apartment", "budget_min": 5000000,\n  "budget_max": 8000000, "city": "Mumbai"\n}
+The server determines tenant, creator membership and ownership. Client-supplied tenant_id is not accepted as authorization.
+A.3 Standard success response
+{ "data": { "id": "resource-uuid", "status": "new" },\n  "meta": { "request_id": "req_...", "timestamp": "2026-11-04T06:30:00Z" } }
+A.4 Standard error response
+{ "error": { "code": "permission_denied",\n  "message": "You do not have permission to assign this lead.",\n  "field_errors": {}, "request_id": "req_..." } }
+A.5 Router pattern
+api_v1 = APIRouter(prefix="/api/v1")\napi_v1.include_router(auth.router, prefix="/auth")\napi_v1.include_router(leads.router, prefix="/leads")\napi_v1.include_router(properties.router, prefix="/properties")\napi_v1.include_router(billing.router, prefix="/billing")\napp.include_router(api_v1)
+Routers validate requests, call application services and return response schemas. Business rules belong in services; data access belongs in repositories.
+Appendix B - Preliminary Data Entities
+Entity
+Purpose
+User
+Global login identity and account status.
+Tenant
+Agency account, subscription and configuration.
+Membership
+User-to-agency relationship, status and organization context.
+Role / Permission
+Role definitions, permission codes and scopes.
+Branch / Team
+Agency organization and access boundaries.
+Lead / LeadActivity
+Prospect, assignment, pipeline and interaction history.
+Contact
+Buyer, seller, landlord, tenant or organization.
+Property
+Underlying real estate asset and structured attributes.
+Listing
+Sale/rental marketing record linked to property.
+Enquiry
+Customer request from listing or other channel.
+Appointment
+Client meeting or property visit.
+Deal / Offer
+Negotiation, agreed terms and transaction state.
+DealPayment
+Amounts received against deal milestones.
+Commission
+Agency/agent commission and payout state.
+Task
+Follow-up, reminder and assigned action.
+Document
+Private object metadata, owner and access policy.
+Subscription / Invoice
+SaaS plan, billing period, invoice and payment state.
+AuditLog
+Actor, action, target, tenant and timestamp.
+OutboxEvent
+Durable event awaiting asynchronous dispatch.
+
+Appendix C - Client Readiness Checklist
+Area
+Readiness item
+Status
+Governance
+Named product owner, technical owner and approval authority.
+Open
+Scope
+MVP modules, target agencies and rollout count approved.
+Open
+Identity
+Tenant, membership, role and permission matrix approved.
+Open
+Organization
+Branch/team hierarchy and invitation policy confirmed.
+Open
+CRM
+Lead stages, sources, assignment and duplicate policy approved.
+Open
+Property
+Types, attributes and listing workflow confirmed.
+Open
+Portal
+Domains, branding, SEO and enquiry consent confirmed.
+Open
+Billing
+Plans, quotas, trial, provider and invoice rules confirmed.
+Open
+Integrations
+Email, SMS, WhatsApp, calendar, maps and portal APIs identified.
+Open
+Security
+RLS, MFA, retention, support access and security review agreed.
+Open
+Hosting
+Dev/staging/production region and data residency decided.
+Open
+DR
+Backup retention, RPO/RTO and restore owner agreed.
+Open
+Testing
+UAT users, acceptance criteria and defect process agreed.
+Open
+Pilot
+Agency, branches, users, listings and success metrics confirmed.
+Open
+Operations
+Support hours, escalation contacts and maintenance agreed.
+Open
+
+Client sign-off record
+Role
+Name
+Signature / approval
+Date
+Client Product Owner
+
+
+
+Client IT / Security Owner
+
+
+
+Agency Operations Owner
+
+
+
+Implementation Partner
+
+
+
+
+This blueprint is a proposed technical and delivery baseline. It does not replace a signed commercial agreement, statement of work, privacy assessment, security assessment or jurisdiction-specific legal/tax advice.
